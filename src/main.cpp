@@ -145,32 +145,32 @@ setup() {
 	if (!force_init) {
 		if (!prefs.begin(SettingServer::prefs_name, true)) {
 			Serial.println(F("Failed to begin prefs"));
-			return;
-		}
-		int8_t model = prefs.getChar("model", -1);
-		if (model == static_cast<int8_t>(Sesame::model_t::sesame_3) || model == static_cast<int8_t>(Sesame::model_t::sesame_4)) {
-			size_t rsz;
-			std::array<uint8_t, 6> bt_address;
-			std::array<uint8_t, SesameClient::PK_SIZE> pk;
-			std::array<uint8_t, SesameClient::SECRET_SIZE> secret;
-			if ((rsz = prefs.getBytes("addr", bt_address.begin(), std::size(bt_address))) == std::size(bt_address) &&
-			    (rsz = prefs.getBytes("pk", pk.begin(), std::size(pk))) == std::size(pk) &&
-			    (rsz = prefs.getBytes("secret", secret.begin(), std::size(secret))) == std::size(secret)) {
-				BLEAddress addr{bt_address.data(), BLE_ADDR_RANDOM};
-				if (client.begin(addr, static_cast<Sesame::model_t>(model)) && client.set_keys(pk, secret)) {
-					initialized = true;
+		} else {
+			int8_t model = prefs.getChar("model", -1);
+			if (model == static_cast<int8_t>(Sesame::model_t::sesame_3) || model == static_cast<int8_t>(Sesame::model_t::sesame_4)) {
+				size_t rsz;
+				std::array<uint8_t, 6> bt_address;
+				std::array<uint8_t, SesameClient::PK_SIZE> pk;
+				std::array<uint8_t, SesameClient::SECRET_SIZE> secret;
+				if ((rsz = prefs.getBytes("addr", bt_address.begin(), std::size(bt_address))) == std::size(bt_address) &&
+				    (rsz = prefs.getBytes("pk", pk.begin(), std::size(pk))) == std::size(pk) &&
+				    (rsz = prefs.getBytes("secret", secret.begin(), std::size(secret))) == std::size(secret)) {
+					BLEAddress addr{bt_address.data(), BLE_ADDR_RANDOM};
+					if (client.begin(addr, static_cast<Sesame::model_t>(model)) && client.set_keys(pk, secret)) {
+						initialized = true;
+					} else {
+						Serial.println(F("Failed to SesameClient init"));
+					}
 				} else {
-					Serial.println(F("Failed to SesameClient init"));
+					Serial.println(F("Failed to load settings"));
 				}
 			} else {
-				Serial.println(F("Failed to load settings"));
+				if (model >= 0) {
+					Serial.printf_P(PSTR("model = %d not suooprted\n"), model);
+				}
 			}
-		} else {
-			if (model >= 0) {
-				Serial.printf_P(PSTR("model = %d not suooprted\n"), model);
-			}
+			prefs.end();
 		}
-		prefs.end();
 	}
 	if (!initialized) {
 		sserver.emplace();
