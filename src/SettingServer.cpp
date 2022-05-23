@@ -1,6 +1,5 @@
 #include "SettingServer.h"
 #include <Arduino.h>
-#include <M5StickC.h>
 #include <NimBLEDevice.h>
 #include <Preferences.h>
 #include <SesameClient.h>
