@@ -121,7 +121,8 @@ SettingServer::hScan() {
 		response_text(F(u8"UUID: %s のデバイスが見つかりませんでした。"), uuid.toString().c_str());
 		return;
 	}
-	if (found->model != Sesame::model_t::sesame_3 && found->model != Sesame::model_t::sesame_4) {
+	if (found->model != Sesame::model_t::sesame_3 && found->model != Sesame::model_t::sesame_4 &&
+	    found->model != Sesame::model_t::sesame_cycle) {
 		response_text(F(u8"'%s' はサポートしていません。"), model_name(found->model));
 		return;
 	}

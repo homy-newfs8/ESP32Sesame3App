@@ -1,5 +1,5 @@
 # ESP32Sesame3App
-ESP32のBluetoothでSESAME 3/4を操作するアプリ
+ESP32のBluetoothでSESAME 3 / SESAME 4 / SESAME サイクルを操作するアプリ
 
 ## 概要
 これはESP32用ライブラリ[libsesame3bt](http://github.com/homy-newfs8/libsesame3bt)を使ったサンプルアプリです。

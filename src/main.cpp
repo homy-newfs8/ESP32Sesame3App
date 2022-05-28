@@ -30,7 +30,7 @@ SesameClient::state_t sc_state;
 ind_color_t ind_color;
 int ind_state;
 blink_pattern_t ind_pattern;
-OneButton button(button_pin);
+OneButton button{button_pin};
 
 void
 reflect_color() {
@@ -147,7 +147,8 @@ setup() {
 			Serial.println(F("Failed to begin prefs"));
 		} else {
 			int8_t model = prefs.getChar("model", -1);
-			if (model == static_cast<int8_t>(Sesame::model_t::sesame_3) || model == static_cast<int8_t>(Sesame::model_t::sesame_4)) {
+			if (model == static_cast<int8_t>(Sesame::model_t::sesame_3) || model == static_cast<int8_t>(Sesame::model_t::sesame_4) ||
+			    model == static_cast<int8_t>(Sesame::model_t::sesame_cycle)) {
 				size_t rsz;
 				std::array<uint8_t, 6> bt_address;
 				std::array<uint8_t, SesameClient::PK_SIZE> pk;
