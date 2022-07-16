@@ -4,14 +4,15 @@
 #include <Preferences.h>
 #include <SesameClient.h>
 #include <SesameScanner.h>
+#include <util.h>
 #include <optional>
 #include "main.h"
-#include "util.h"
 
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameClient;
 using libsesame3bt::SesameInfo;
 using libsesame3bt::SesameScanner;
+namespace util = libsesame3bt::util;
 
 namespace {
 
@@ -97,15 +98,15 @@ SettingServer::hScan() {
 	}
 
 	auto secret_str = server.arg("secret");
-	std::array<uint8_t, SesameClient::SECRET_SIZE> secret;
-	if (!util::hex2bin(secret_str, secret)) {
+	std::array<std::byte, SesameClient::SECRET_SIZE> secret;
+	if (!util::hex2bin(secret_str.c_str(), secret)) {
 		response_text(F(u8"Secret Keyの形式が正しくありません。"));
 		return;
 	}
 
 	auto pk_str = server.arg("pk");
-	std::array<uint8_t, SesameClient::PK_SIZE> pk;
-	if (!util::hex2bin(pk_str, pk)) {
+	std::array<std::byte, SesameClient::PK_SIZE> pk;
+	if (!util::hex2bin(pk_str.c_str(), pk)) {
 		response_text(F(u8"Public Keyの形式が正しくありません。"));
 		return;
 	}

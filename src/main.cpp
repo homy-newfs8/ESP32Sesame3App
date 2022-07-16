@@ -151,8 +151,8 @@ setup() {
 			    model == static_cast<int8_t>(Sesame::model_t::sesame_cycle)) {
 				size_t rsz;
 				std::array<uint8_t, 6> bt_address;
-				std::array<uint8_t, SesameClient::PK_SIZE> pk;
-				std::array<uint8_t, SesameClient::SECRET_SIZE> secret;
+				std::array<std::byte, SesameClient::PK_SIZE> pk;
+				std::array<std::byte, SesameClient::SECRET_SIZE> secret;
 				if ((rsz = prefs.getBytes("addr", bt_address.begin(), std::size(bt_address))) == std::size(bt_address) &&
 				    (rsz = prefs.getBytes("pk", pk.begin(), std::size(pk))) == std::size(pk) &&
 				    (rsz = prefs.getBytes("secret", secret.begin(), std::size(secret))) == std::size(secret)) {
