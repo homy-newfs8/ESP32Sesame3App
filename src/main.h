@@ -1,6 +1,10 @@
 #pragma once
 #if USE_M5STICK_FEATURE
+#ifdef M5STICKC_PLUS
+#include <M5StickCPlus.h>
+#else
 #include <M5StickC.h>
+#endif
 #endif
 #include <cstdint>
 

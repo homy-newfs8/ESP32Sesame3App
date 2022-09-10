@@ -1,8 +1,5 @@
 #include "main.h"
 #include <Arduino.h>
-#if USE_M5STICK_FEATURE
-#include <M5StickC.h>
-#endif
 #include <OneButton.h>
 #include <Preferences.h>
 #include <Sesame.h>
