@@ -22,7 +22,7 @@ namespace util = libsesame3bt::core::util;
 
 namespace {
 
-const static char* SSID = "alibsesame3bt";
+const static char* SSID = "libsesame3bt";
 const static char* AP_PASSWORD = "hirakegoma";
 
 }  // namespace
@@ -59,9 +59,6 @@ constexpr const char* start_page =
 </form>
 )***";
 
-extern bool is_supported(Sesame::model_t);
-extern const char* model_name(Sesame::model_t);
-
 void
 SettingServer::loop() {
 	if (canRun) {
@@ -74,17 +71,17 @@ void
 SettingServer::setup() {
 	Preferences prefs{};
 	if (!prefs.begin(prefs_name)) {
-		Serial.println(F("Failed to open preference storage"));
+		Serial.println("Failed to open preference storage");
 		return;
 	}
 	prefs.clear();
 	prefs.end();
 	if (!WiFi.softAPConfig(IPAddress(10, 3, 3, 3), IPAddress(0, 0, 0, 0), IPAddress(255, 255, 255, 0))) {
-		Serial.println(F("Failed to Wi-Fi AP setting"));
+		Serial.println("Failed to Wi-Fi AP setting");
 		return;
 	}
 	if (!WiFi.softAP(SSID, AP_PASSWORD)) {
-		Serial.println(F("Failed to start Wi-Fi AP"));
+		Serial.println("Failed to start Wi-Fi AP");
 		return;
 	}
 	server.on("/", [this]() { hRoot(); });
@@ -92,7 +89,7 @@ SettingServer::setup() {
 	server.on("/connect", [this]() { hConnect(); });
 	server.begin();
 	canRun = true;
-	Serial.printf_P(PSTR("Setting server ready on %s\n"), WiFi.softAPIP().toString().c_str());
+	Serial.printf("Setting server ready on %s\n", WiFi.softAPIP().toString().c_str());
 	set_ind_color(ind_color_t::setting, blink_pattern_t::setting);
 }
 
@@ -110,9 +107,8 @@ void
 SettingServer::hScan() {
 	set_ind_color(ind_color_t::setting, blink_pattern_t::connecting);
 	std::set<std::string> uuids{};
-	server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-	server.send(200, "text/html;charset=utf-8", "");
-	server.sendContent(scan_result_pre);
+	server.setContentLength(CONTENT_LENGTH_UNKNOWN);  // prepare chunk transfer
+	server.send(200, "text/html;charset=utf-8", scan_result_pre);
 	SesameScanner::get().scan(20, [this, &uuids](auto& scanner, const auto* info) {
 		if (info && is_supported(info->model) && info->flags.registered) {
 			auto ustr = std::string{info->uuid};
@@ -125,8 +121,7 @@ SettingServer::hScan() {
 		}
 	});
 	server.sendContent(scan_result_post);
-	server.sendContent("");
-	server.setContentLength(CONTENT_LENGTH_NOT_SET);
+	server.sendContent("");  // FINISH chunk
 }
 
 void
@@ -134,7 +129,6 @@ SettingServer::hConnect() {
 	auto sesame = server.arg("sesame");
 	auto secret_p = server.arg("secret");
 	auto pk_p = server.arg("pk");
-	Serial.printf("sesame=%s\n", sesame.c_str());
 	if (!sesame.length() || !secret_p.length() || sesame.length() != 2 + 1 + 6 * 2 + 5 + 1 + 36) {
 		response_string(u8"デバイスが指定されいていません。");
 		return;
@@ -162,9 +156,7 @@ SettingServer::hConnect() {
 		}
 	}
 	auto addr = std::string{sesame.c_str() + 3, 6 * 2 + 5};
-	Serial.printf("addr=%s\n", addr.c_str());
 	NimBLEAddress address{addr, BLE_ADDR_RANDOM};
-	Serial.println("start connection");
 	set_ind_color(ind_color_t::setting, blink_pattern_t::connecting);
 	SesameClient client{};
 	client.begin(address, model);
@@ -172,7 +164,6 @@ SettingServer::hConnect() {
 		response_string(u8"鍵情報の設定に失敗しました。");
 		return;
 	}
-	Serial.println("set keys done");
 	SesameClient::state_t cur_state;
 	client.set_state_callback([&cur_state](auto& _client, auto state) { cur_state = state; });
 	if (!client.connect(5)) {

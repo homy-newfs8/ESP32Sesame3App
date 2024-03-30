@@ -5,9 +5,7 @@
 #include <Sesame.h>
 #include <SesameClient.h>
 #include <SesameScanner.h>
-#include <TaskManager.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include <TaskManagerIO.h>
 #include "SettingServer.h"
 
 using libsesame3bt::Sesame;
@@ -93,24 +91,14 @@ set_ind_color(ind_color_t color, blink_pattern_t pattern) {
 	reflect_color();
 }
 
-TaskHandle_t intervl_task_hnd;
-
-void
-interval_task_loop(void* _) {
-	for (;;) {
-		Tasks.update();
-		delay(10);
-	}
-}
-
 std::optional<SettingServer> sserver;
 bool is_locked;
 
 void
 status_update(SesameClient& client, SesameClient::Status status) {
 	if (status != sesame_status) {
-		Serial.printf_P(PSTR("Status in_lock=%u,in_unlock=%u,pos=%d,volt=%.2f,volt_crit=%u\n"), status.in_lock(), status.in_unlock(),
-		                status.position(), status.voltage(), status.battery_critical());
+		Serial.printf("Status in_lock=%u,in_unlock=%u,pos=%d,volt=%.2f,volt_crit=%u\n", status.in_lock(), status.in_unlock(),
+		              status.position(), status.voltage(), status.battery_critical());
 		sesame_status = status;
 		bool new_locked = status.in_lock() == status.in_unlock() ? is_locked : status.in_lock();
 		if (new_locked != is_locked) {
@@ -123,7 +111,7 @@ status_update(SesameClient& client, SesameClient::Status status) {
 
 void
 button_clicked() {
-	Serial.println(F("click"));
+	Serial.println("click");
 	if (client.is_session_active()) {
 		if (!is_locked) {
 			client.lock(u8"テストアプリ");
@@ -134,7 +122,7 @@ button_clicked() {
 
 void
 button_doubleclicked() {
-	Serial.println(F("double click"));
+	Serial.println("double click");
 	if (client.is_session_active()) {
 		if (is_locked) {
 			client.unlock(u8"テストアプリ");
@@ -153,12 +141,11 @@ setup() {
 #else
 	Serial.begin(115200);
 #endif
-	Serial.println(F("Starting ESP32SesameApp"));
+	Serial.println("Starting ESP32SesameApp");
 	set_ind_color(ind_color_t::on, blink_pattern_t::on);
 	BLEDevice::init("");
 
-	Tasks.add([] { reflect_color(); })->startFps(4.0);
-	xTaskCreateUniversal(interval_task_loop, "interval", 2048, nullptr, 1, &intervl_task_hnd, APP_CPU_NUM);
+	taskManager.scheduleFixedRate(250, reflect_color);
 
 	bool force_init = false;
 	if (digitalRead(button_pin) == LOW) {
@@ -174,7 +161,7 @@ setup() {
 			delay(10);
 		}
 		if (long_press) {
-			Serial.println(F("Force initialize"));
+			Serial.println("Force initialize");
 			force_init = true;
 		}
 	}
@@ -182,7 +169,7 @@ setup() {
 	bool initialized = false;
 	if (!force_init) {
 		if (!prefs.begin(SettingServer::prefs_name, true)) {
-			Serial.println(F("Failed to begin prefs"));
+			Serial.println("Failed to begin prefs");
 		} else {
 			auto model = static_cast<Sesame::model_t>(prefs.getChar("model", -1));
 			if (is_supported(model)) {
@@ -197,13 +184,13 @@ setup() {
 					if (client.begin(addr, model) && client.set_keys(pk, secret)) {
 						initialized = true;
 					} else {
-						Serial.println(F("Failed to SesameClient init"));
+						Serial.println("Failed to SesameClient init");
 					}
 				} else {
-					Serial.println(F("Failed to load settings"));
+					Serial.println("Failed to load settings");
 				}
 			} else {
-				Serial.printf_P(PSTR("model = %s not suooprted\n"), model_name(model));
+				Serial.printf("model = %s not suooprted\n"), model_name(model);
 			}
 			prefs.end();
 		}
@@ -213,11 +200,11 @@ setup() {
 	}
 
 	if (sserver) {
-		Serial.println(F("starting setting mode"));
+		Serial.println("starting setting mode");
 		sserver->setup();
 		return;
 	}
-	Serial.println(F("starting normal mode"));
+	Serial.println("starting normal mode");
 	client.set_state_callback([](auto& client, auto state) { sc_state = state; });
 	client.set_status_callback(status_update);
 	button.attachClick(button_clicked);
@@ -233,20 +220,21 @@ void
 loop() {
 	if (sserver) {
 		sserver->loop();
+		taskManager.runLoop();
 		return;
 	}
 	button.tick();
 	switch (my_state) {
 		case state_t::idle:
 			if (last_operated == 0 || millis() - last_operated > 2000) {
-				Serial.println(F("connecting"));
+				Serial.println("connecting");
 				set_ind_color(ind_color_t::on, blink_pattern_t::active);
-				if (client.connect()) {
-					Serial.println(F("connected"));
+				if (client.connect(5)) {
+					Serial.println("connected");
 					last_operated = millis();
 					my_state = state_t::connecting;
 				} else {
-					Serial.println(F("Failed to connect"));
+					Serial.println("Failed to connect");
 					my_state = state_t::abort;
 					set_ind_color(ind_color_t::on, blink_pattern_t::error);
 				}
@@ -256,11 +244,9 @@ loop() {
 			if (sc_state == SesameClient::state_t::active) {
 				my_state = state_t::active;
 			} else if (millis() - last_operated > AUTH_TIMEOUT || sc_state == SesameClient::state_t::idle) {
-				Serial.println(F("Failed to authenticate"));
+				Serial.println("Failed to authenticate");
 				set_ind_color(ind_color_t::on, blink_pattern_t::error);
 				my_state = state_t::abort;
-			} else {
-				delay(100);
 			}
 			break;
 		case state_t::active:
@@ -271,4 +257,5 @@ loop() {
 			delay(500);
 			break;
 	}
+	taskManager.runLoop();
 }

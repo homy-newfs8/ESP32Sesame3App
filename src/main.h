@@ -6,6 +6,7 @@
 #include <M5StickC.h>
 #endif
 #endif
+#include <Sesame.h>
 #include <cstdint>
 
 enum class blink_pattern_t : uint8_t {
@@ -32,3 +33,5 @@ enum class ind_color_t : int {
 #endif
 
 extern void set_ind_color(ind_color_t color, blink_pattern_t pattern);
+extern bool is_supported(libsesame3bt::Sesame::model_t);
+extern const char* model_name(libsesame3bt::Sesame::model_t);
