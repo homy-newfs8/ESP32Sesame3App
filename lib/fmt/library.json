@@ -1,0 +1,13 @@
+{
+	"name": "fmt",
+	"version": "10.2.1",
+	"build": {
+		"srcDir": "not-exists",
+		"includeDir": "fmt/include"
+	},
+	"export": {
+		"include": [
+			"fmt/include"
+		]
+	}
+}

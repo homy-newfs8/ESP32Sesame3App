@@ -9,7 +9,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "SettingServer.h"
-#include "util.h"
 
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameClient;
@@ -28,6 +27,49 @@ ind_color_t ind_color;
 int ind_state;
 blink_pattern_t ind_pattern;
 OneButton button{button_pin};
+
+bool
+is_supported(Sesame::model_t model) {
+	using model_t = Sesame::model_t;
+	switch (model) {
+		case model_t::sesame_3:
+		case model_t::sesame_4:
+		case model_t::sesame_5:
+		case model_t::sesame_5_pro:
+		case model_t::sesame_bike:
+			return true;
+		default:
+			return false;
+	}
+}
+
+const char*
+model_name(Sesame::model_t model) {
+	switch (model) {
+		case Sesame::model_t::sesame_3:
+			return "SESAME 3";
+		case Sesame::model_t::wifi_2:
+			return "Wi-Fi Module 2";
+		case Sesame::model_t::sesame_bot:
+			return "SESAME bot";
+		case Sesame::model_t::sesame_bike:
+			return "SESAME Cycle";
+		case Sesame::model_t::sesame_4:
+			return "SESAME 4";
+		case Sesame::model_t::sesame_5:
+			return "SESAME 5";
+		case Sesame::model_t::sesame_5_pro:
+			return "SESAME 5 PRO";
+		case Sesame::model_t::sesame_touch:
+			return "SESAME TOUCH";
+		case Sesame::model_t::sesame_touch_pro:
+			return "SESAME TOUCH PRO";
+		case Sesame::model_t::sesame_bike_2:
+			return "SESAME Cycle 2";
+		default:
+			return "UNKNOWN";
+	}
+}
 
 void
 reflect_color() {
@@ -67,9 +109,8 @@ bool is_locked;
 void
 status_update(SesameClient& client, SesameClient::Status status) {
 	if (status != sesame_status) {
-		Serial.printf_P(PSTR("Setting lock=%d,unlock=%d\n"), status.lock_position(), status.unlock_position());
 		Serial.printf_P(PSTR("Status in_lock=%u,in_unlock=%u,pos=%d,volt=%.2f,volt_crit=%u\n"), status.in_lock(), status.in_unlock(),
-		                status.position(), status.voltage(), status.voltage_critical());
+		                status.position(), status.voltage(), status.battery_critical());
 		sesame_status = status;
 		bool new_locked = status.in_lock() == status.in_unlock() ? is_locked : status.in_lock();
 		if (new_locked != is_locked) {
@@ -143,18 +184,17 @@ setup() {
 		if (!prefs.begin(SettingServer::prefs_name, true)) {
 			Serial.println(F("Failed to begin prefs"));
 		} else {
-			int8_t model = prefs.getChar("model", -1);
-			if (model == static_cast<int8_t>(Sesame::model_t::sesame_3) || model == static_cast<int8_t>(Sesame::model_t::sesame_4) ||
-			    model == static_cast<int8_t>(Sesame::model_t::sesame_cycle)) {
+			auto model = static_cast<Sesame::model_t>(prefs.getChar("model", -1));
+			if (is_supported(model)) {
 				size_t rsz;
 				std::array<uint8_t, 6> bt_address;
-				std::array<std::byte, SesameClient::PK_SIZE> pk;
-				std::array<std::byte, SesameClient::SECRET_SIZE> secret;
+				std::array<std::byte, Sesame::PK_SIZE> pk;
+				std::array<std::byte, Sesame::SECRET_SIZE> secret;
 				if ((rsz = prefs.getBytes("addr", bt_address.begin(), std::size(bt_address))) == std::size(bt_address) &&
 				    (rsz = prefs.getBytes("pk", pk.begin(), std::size(pk))) == std::size(pk) &&
 				    (rsz = prefs.getBytes("secret", secret.begin(), std::size(secret))) == std::size(secret)) {
 					BLEAddress addr{bt_address.data(), BLE_ADDR_RANDOM};
-					if (client.begin(addr, static_cast<Sesame::model_t>(model)) && client.set_keys(pk, secret)) {
+					if (client.begin(addr, model) && client.set_keys(pk, secret)) {
 						initialized = true;
 					} else {
 						Serial.println(F("Failed to SesameClient init"));
@@ -163,9 +203,7 @@ setup() {
 					Serial.println(F("Failed to load settings"));
 				}
 			} else {
-				if (model >= 0) {
-					Serial.printf_P(PSTR("model = %d not suooprted\n"), model);
-				}
+				Serial.printf_P(PSTR("model = %s not suooprted\n"), model_name(model));
 			}
 			prefs.end();
 		}
