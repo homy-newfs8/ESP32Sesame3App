@@ -1,15 +1,19 @@
 # ESP32Sesame3App
-ESP32のBluetoothでSESAME 3 / SESAME 4 / SESAME サイクルを操作するアプリ
+ESP32のBluetoothでSESAME 5 / SESAME 5 PRO / SESAME 4 / SESAME 3 / SESAME サイクル / SESAME bot を操作するアプリ
 
 ## 概要
 これはESP32用ライブラリ[libsesame3bt](http://github.com/homy-newfs8/libsesame3bt)を使ったサンプルアプリです。
 
-[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 3およびSESAME 4をESP32搭載マイコンで施錠、開錠することができます。
+[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックおよびbotをESP32搭載マイコンで施錠、開錠することができます。
 
 ## 対応機種
 以下の機種に対応しています。
-- [SESAME 3](https://jp.candyhouse.co/products/sesame3)
+- [SESAME 5](https://jp.candyhouse.co/products/sesame5)
+- [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro)
+- [SESAME bot](https://jp.candyhouse.co/products/sesame3-bot)
 - [SESAME 4](https://jp.candyhouse.co/products/sesame4)
+- [SESAME 3](https://jp.candyhouse.co/products/sesame3)
+- [SESAME サイクル](https://jp.candyhouse.co/products/sesame3-bike)
 
 ## 開発環境
 以下のデバイスで開発しました。他のデバイスでも条件が合えば少しの修正で利用可能です。
@@ -43,18 +47,15 @@ constexpr int led_pin = 10;
 http://10.3.3.3/
 ```
 
-操作したいSESAMEの以下の情報を入力してください。
+[BTスキャン実行]ボタンをクリックすると周囲にある対応セサミを20秒間スキャンします。
+見つかった対応デバイスが一覧に表示されますので、一覧から選択してから以下の情報を入力して[接続テスト]をクリックしてください。
 
-- UUID
 - Secret Key
 - Public Key
 
-これらの情報は、SESAMEスマホアプリの鍵シェア機能で使用するQRコードを[QR Code Reader for SESAME](https://sesame-qr-reader.vercel.app/)で処理すると取得できます(オーナーまたはマネジャー用のQRコードが必要です)。
+これらの情報は、SESAMEスマホアプリの鍵シェア機能で使用するQRコードを[QR Code Reader for SESAME](https://sesame-qr-reader.vercel.app/)で処理すると取得できます(オーナーまたはマネジャー用のQRコードが必要です)。SESAME 5 / SESAME 5 PRO では Secret Key のみ入力します(Public Keyは空欄で)。
 
-情報入力後「BTスキャン実行」ボタンをクリックするとESP32がBluetoothスキャンを実行し、入力されたUUIDに一致するSESAMEを検索します。検索中はLEDがはやく点滅(0.25秒点灯、0.25秒消灯)します。スキャンは最大20秒実施します。
-対象のSESAMEが見つかると接続(と認証)確認を実行します。
-
-スキャンと接続確認が成功すると、入力された情報をESP32内に保存します。この時点でブラウザ上に再起動を促すメッセージが表示されますので、ESP32マイコンを再起動します。失敗した場合はメッセージを見て何らか対応してください。
+接続テストが成功すると、入力された情報をESP32内に保存します。この時点でブラウザ上に再起動を促すメッセージが表示されますので、ESP32マイコンを再起動します。失敗した場合はメッセージを見て何らか対応してください。
 
 初期設定モードでのLEDは以下の表示を行います。
 
@@ -80,6 +81,7 @@ http://10.3.3.3/
 |-|-|
 |クリック|施錠|
 |ダブルクリック|開錠|
+|ロングクリック|クリック(botのみ)|
 
 ### 再設定(データ消去)
 初期設定をやり直したい場合は以下の操作を行います。

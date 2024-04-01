@@ -31,10 +31,11 @@ is_supported(Sesame::model_t model) {
 	using model_t = Sesame::model_t;
 	switch (model) {
 		case model_t::sesame_3:
+		case model_t::sesame_bot:
+		case model_t::sesame_bike:
 		case model_t::sesame_4:
 		case model_t::sesame_5:
 		case model_t::sesame_5_pro:
-		case model_t::sesame_bike:
 			return true;
 		default:
 			return false;
@@ -117,6 +118,14 @@ button_clicked() {
 			client.lock(u8"テストアプリ");
 			set_ind_color(ind_color_t::unlocked, blink_pattern_t::active);
 		}
+	}
+}
+
+void
+button_longpress() {
+	Serial.println("long press");
+	if (client.get_model() == Sesame::model_t::sesame_bot && client.is_session_active()) {
+		client.click(u8"テストアプリ");
 	}
 }
 
@@ -209,6 +218,7 @@ setup() {
 	client.set_status_callback(status_update);
 	button.attachClick(button_clicked);
 	button.attachDoubleClick(button_doubleclicked);
+	button.attachLongPressStart(button_longpress);
 }
 
 enum class state_t { idle, connecting, active, abort };

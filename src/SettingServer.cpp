@@ -33,7 +33,7 @@ constexpr const char* scan_result_pre =
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>libsesame3bt sample scanning</title>
 <form action="/connect" method="post">
-<select name="sesame">
+<select name="sesame" size="4">
 )***";
 
 constexpr const char* scan_result_post =
